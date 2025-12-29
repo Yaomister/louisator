@@ -2,6 +2,12 @@ import asyncio
 import math
 import cv2
 from ultralytics import YOLO
+from dataclasses import dataclass
+
+
+@dataclass
+class State:
+    moving: bool
 
 class BackgroundRunner:
 
@@ -16,7 +22,6 @@ class BackgroundRunner:
             _frame = self.video.read()[1]
             results = self.model.track(_frame, persist=True, conf = 0.1)
             self.frame = results[0].plot()
-            print(results[0].boxes)
 
 
 
