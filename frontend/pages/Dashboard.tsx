@@ -1,47 +1,54 @@
 import { useEffect, useState } from "react";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 import "../stylesheets/Dashboard.css";
 
+type State = {
+  speed: number;
+  activity: string;
+  time: number;
+};
+
 const Dashboard = () => {
-  const [img, setImg] = useState<string>("");
-  const [data, setData] = useState(null);
+  const [img, setImg] = useState<string | null>(null);
+  const [data, setData] = useState<State[]>([]);
+  const [events, setEvents] = useState<State[]>([]);
 
   useEffect(() => {
-    const websocket = new WebSocket("ws://localhost:8000/camera");
+    const websockets = [
+      new WebSocket("ws://localhost:8000/camera"),
+      new WebSocket("ws://localhost:8000/data"),
+      new WebSocket("ws://localhost:8000/events"),
+    ];
 
-    websocket.binaryType = "arraybuffer";
+    for (const websocket of websockets) {
+      websocket.binaryType = "arraybuffer";
 
-    websocket.onmessage = (payload) => {
+      websocket.onerror = (err) => {
+        console.error("Websocket error: ", err);
+      };
+    }
+
+    websockets[0].onmessage = (payload) => {
       const blob = new Blob([payload.data], { type: "image/png" });
       const url = URL.createObjectURL(blob);
       setImg(url);
     };
 
-    websocket.onerror = (err) => {
-      console.error("WebSocket error: ", err);
+    websockets[1].onmessage = (payload) => {
+      const _data = JSON.parse(payload.data);
+      setData((prev) => [...prev, _data]);
+    };
+
+    websockets[2].onmessage = (payload) => {
+      const _data = JSON.parse(payload.data);
+      setEvents((prev) => [...prev, _data.message]);
     };
 
     return () => {
-      websocket.close();
-    };
-  }, []);
-
-  useEffect(() => {
-    const websocket = new WebSocket("ws://localhost:8000/data");
-
-    websocket.binaryType = "arraybuffer";
-
-    websocket.onmessage = (payload) => {
-      //   setData(payload);
-      console.error(payload);
-    };
-
-    websocket.onerror = (err) => {
-      console.error("WebSocket error: ", err);
-    };
-
-    return () => {
-      websocket.close();
+      for (const websocket of websockets) {
+        websocket.close();
+      }
     };
   }, []);
 
@@ -54,11 +61,37 @@ const Dashboard = () => {
             src={img ? img : "/images/black.png"}
           ></img>
         </div>
-        <div className="encounterments"></div>
+        <div className="encounterments">
+          {events.map((message) => {
+            return <div>{message}</div>;
+          })}
+        </div>
       </div>
       <div className="analytics">
-        <div className="movement-over-time-graph graph"></div>
-        <div className="acitivity-distribution-graph graph"></div>
+        <div className="acitivity-distribution-graph graph">
+          <LineChart
+            style={{ width: "100%", height: "100%" }}
+            responsive
+            data={data.slice(data.length > 20 ? data.length - 20 : 0)}
+          >
+            <CartesianGrid strokeDasharray="5 5" stroke="#eee" />
+            <YAxis width={"auto"} />
+            <XAxis dataKey={"time"} />
+            <Line dataKey={"speed"} />
+          </LineChart>
+        </div>
+        <div className="num-obj-detected-graph graph">
+          <LineChart
+            style={{ width: "100%", height: "100%" }}
+            responsive
+            data={data.slice(data.length > 20 ? data.length - 20 : 0)}
+          >
+            <CartesianGrid strokeDasharray="5 5" stroke="#eee" />
+            <YAxis width={"auto"} />
+            <XAxis dataKey={"time"} />
+            <Line dataKey={"num_obj_detect"} />
+          </LineChart>
+        </div>
       </div>
     </div>
   );

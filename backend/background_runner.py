@@ -13,15 +13,17 @@ class State:
     speed: float = 0.0
     activity: str = "idle"
     seen: set[str] = None
+    num_obj_detected = 0
 
 class BackgroundRunner:
 
-    def __init__(self):
+    def __init__(self, send_event):
         self.model = YOLO("best.pt")
         self.video = cv2.VideoCapture(0)
         self.state = State()
         _, self.frame = self.video.read()
         self.state.seen = set()
+        self.send_event = send_event
 
     async def activate(self):
         while(True):
@@ -54,17 +56,23 @@ class BackgroundRunner:
             current_id = set()
 
             for box in results[0].boxes:
-                if box.id is None:
+                if (box.id is None): 
                     continue
-                obj_id = int(box.id.item())
+                current_id.add(int(box.id.item()))
 
-                current_id.add(obj_id)
+            self.state.num_obj_detected = len(current_id)
 
-            new_objects = current_id - self.state.seen
 
-            if new_objects:
-                for obj in new_objects:
-                    print(obj)
+            not_seen_ids = current_id - self.state.seen
+
+            
+
+            if (len(not_seen_ids) > 0):
+                for id in not_seen_ids:
+                    await self.send_event("Seen something new")
+                    
+            
+            self.state.seen = current_id
 
 
 

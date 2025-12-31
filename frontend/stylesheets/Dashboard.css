@@ -1,6 +1,7 @@
 :root {
-  --primary-background-color: #1d1415;
-  --secondary-background-color: #331832;
+  --primary-background-color: #11151c;
+  --secondary-background-color: #212d40;
+  --font-color: #c5d4e8;
 }
 
 body {
@@ -21,7 +22,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: var(--secondary-background-color);
+  background-color: var(--primary-background-color);
 }
 
 .live-view-wrapper {
@@ -44,6 +45,6 @@ body {
 
 .graph {
   height: 100%;
-  width: 49%;
+  width: 50%;
   background-color: var(--secondary-background-color);
 }
