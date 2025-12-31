@@ -12,7 +12,7 @@ event_clients = set()
 async def send_event(message: str):
     for websocket in list(event_clients):
         try:
-            await websocket.send_json({"message": message})
+            await websocket.send_json({"message": message, "time" : runner.state.last_time,})
         except:
             event_clients.remove(websocket)
 

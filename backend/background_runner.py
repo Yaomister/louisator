@@ -69,7 +69,11 @@ class BackgroundRunner:
 
             if (len(not_seen_ids) > 0):
                 for id in not_seen_ids:
-                    await self.send_event("Seen something new")
+                    for box in results[0].boxes:
+                        if (box.id == id):
+                            cls_id = int(box.cls)
+                            label = results[0].names.get(cls_id, "unknown animal")
+                            await self.send_event(f"met a {label.split("-")[1]} 🐾")
                     
             
             self.state.seen = current_id

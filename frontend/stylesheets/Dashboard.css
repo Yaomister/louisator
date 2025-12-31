@@ -7,6 +7,7 @@
 body {
   background-color: var(--primary-background-color);
   padding: 0;
+  overflow: hidden;
 }
 
 .dashboard {
@@ -47,4 +48,38 @@ body {
   height: 100%;
   width: 50%;
   background-color: var(--secondary-background-color);
+}
+
+.events-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 20%;
+  height: 100%;
+}
+
+.events-title {
+  font-family: "Courier New", Courier, monospace;
+  text-align: center;
+  font-size: 2em;
+  color: var(--font-color);
+  padding-bottom: 1em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.events {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.event-text {
+  width: 90%;
+  font-size: 1em;
+  color: var(--font-color);
+  font-family: "Courier New", Courier, monospace;
+  padding-left: 1em;
+  line-break: normal;
 }

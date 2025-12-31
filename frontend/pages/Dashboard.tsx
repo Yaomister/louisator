@@ -1,18 +1,30 @@
 import { useEffect, useState } from "react";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import "../stylesheets/Dashboard.css";
 
 type State = {
   speed: number;
   activity: string;
-  time: number;
+  time: Date;
+};
+
+type Message = {
+  message: string;
+  time: Date;
 };
 
 const Dashboard = () => {
   const [img, setImg] = useState<string | null>(null);
   const [data, setData] = useState<State[]>([]);
-  const [events, setEvents] = useState<State[]>([]);
+  const [events, setEvents] = useState<Message[]>([]);
 
   useEffect(() => {
     const websockets = [
@@ -37,12 +49,28 @@ const Dashboard = () => {
 
     websockets[1].onmessage = (payload) => {
       const _data = JSON.parse(payload.data);
-      setData((prev) => [...prev, _data]);
+      setData((prev) => [
+        ...prev,
+        {
+          ..._data,
+          time: new Date(_data.time * 1000).toLocaleTimeString("en-GB", {
+            hour12: false,
+          }),
+        },
+      ]);
     };
 
     websockets[2].onmessage = (payload) => {
       const _data = JSON.parse(payload.data);
-      setEvents((prev) => [...prev, _data.message]);
+      setEvents((prev) => [
+        {
+          ..._data,
+          time: new Date(_data.time * 1000).toLocaleTimeString("en-GB", {
+            hour12: false,
+          }),
+        },
+        ...prev,
+      ]);
     };
 
     return () => {
@@ -61,10 +89,15 @@ const Dashboard = () => {
             src={img ? img : "/images/black.png"}
           ></img>
         </div>
-        <div className="encounterments">
-          {events.map((message) => {
-            return <div>{message}</div>;
-          })}
+        <div className="events-wrapper">
+          <h2 className="events-title">Events</h2>
+          <div className="events">
+            {events.map((message) => {
+              return (
+                <p className="event-text">{`${message.time}: ${message.message}`}</p>
+              );
+            })}
+          </div>
         </div>
       </div>
       <div className="analytics">
@@ -77,7 +110,7 @@ const Dashboard = () => {
             <CartesianGrid strokeDasharray="5 5" stroke="#eee" />
             <YAxis width={"auto"} />
             <XAxis dataKey={"time"} />
-            <Line dataKey={"speed"} />
+            <Line dataKey={"speed"} type={"monotone"} />
           </LineChart>
         </div>
         <div className="num-obj-detected-graph graph">
@@ -89,7 +122,8 @@ const Dashboard = () => {
             <CartesianGrid strokeDasharray="5 5" stroke="#eee" />
             <YAxis width={"auto"} />
             <XAxis dataKey={"time"} />
-            <Line dataKey={"num_obj_detect"} />
+            <Line dataKey={"num_obj_detect"} type={"monotone"} />
+            <Tooltip cursor={{ strokeDasharray: "3 3" }} />
           </LineChart>
         </div>
       </div>
