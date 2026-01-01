@@ -1,2 +1,4 @@
-make the frontend look better
-Add facial recognization and text message reminder
+
+fix the issue with the connection (0.5)
+Add facial regonization (3.5)
+add axis labels on the graphs

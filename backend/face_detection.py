@@ -25,12 +25,9 @@ class FaceDetection:
 
     def recognize(self, frame):
 
-
-
         face_locations = face_recognition.face_locations(frame)
 
         face_encodings = face_recognition.face_encodings(frame, face_locations)
-
 
         res = []
         for encoding, location in zip(face_encodings, face_locations):

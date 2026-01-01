@@ -36,8 +36,10 @@ class BackgroundRunner:
 
             recognized_people = self.facial_recognition.recognize(_frame)
 
-            for name, (top, right, bottom, left) in recognized_people:
+            current_seen = set()
 
+            for name, (top, right, bottom, left) in recognized_people:
+                current_seen.add(name)
                 cv2.rectangle(_frame, (left, top), (right, bottom), (0, 0, 255), 2)
                 cv2.rectangle(_frame, (left, bottom - 35), (right, top), (0, 0, 255))
                 font = cv2.FONT_HERSHEY_COMPLEX
@@ -67,31 +69,31 @@ class BackgroundRunner:
 
             self.state.last_time = now
 
-            current_id = set()
-
             for box in results[0].boxes:
                 if (box.id is None): 
                     continue
-                current_id.add(int(box.id.item()))
+                current_seen.add(int(box.id.item()))
 
-            self.state.num_obj_detected = len(current_id)
+            self.state.num_obj_detected = len(current_seen)
 
 
-            not_seen_ids = current_id - self.state.seen
+            newly_seen = current_seen - self.state.seen
 
         
             
 
-            if (len(not_seen_ids) > 0):
-                for id in not_seen_ids:
-                    for box in results[0].boxes:
-                        if (box.id == id):
-                            cls_id = int(box.cls)
-                            label = results[0].names.get(cls_id, "unknown animal")
-                            await self.send_event(f"met a {label.split("-")[1]} 🐾")
-                    
-            
-            self.state.seen = current_id
+            if (len(newly_seen) > 0):
+                for key in newly_seen:
+                    if isinstance(key, int):
+                        for box in results[0].boxes:
+                            if (box.id == id):
+                                cls_id = int(box.cls)
+                                label = results[0].names.get(cls_id, "unknown animal")
+                                await self.send_event(f"met a {label.split("-")[1]} 🐾")
+                        
+                    else:
+                        await self.send_event(f"met {key} 👤")
+            self.state.seen = current_seen
 
 
 
