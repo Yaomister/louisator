@@ -4,6 +4,7 @@ import cv2
 from ultralytics import YOLO
 from dataclasses import dataclass
 import numpy as np
+from face_detection import FaceDetection
 
 
 @dataclass
@@ -24,12 +25,25 @@ class BackgroundRunner:
         _, self.frame = self.video.read()
         self.state.seen = set()
         self.send_event = send_event
+        self.facial_recognition = FaceDetection(None)
+
 
     async def activate(self):
         while(True):
-            await asyncio.sleep(0.015)
+            await asyncio.sleep(0.25)
             _frame = self.video.read()[1]
             results = self.model.track(_frame, persist=True, conf = 0.1)
+
+            recognized_people = self.facial_recognition.recognize(_frame)
+
+            for name, (top, right, bottom, left) in recognized_people:
+
+                cv2.rectangle(_frame, (left, top), (right, bottom), (0, 0, 255), 2)
+                cv2.rectangle(_frame, (left, bottom - 35), (right, top), (0, 0, 255))
+                font = cv2.FONT_HERSHEY_COMPLEX
+                cv2.putText(_frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+
+                
             self.frame = results[0].plot()
             
             grey = cv2.cvtColor(_frame, cv2.COLOR_BGR2GRAY)
@@ -65,6 +79,7 @@ class BackgroundRunner:
 
             not_seen_ids = current_id - self.state.seen
 
+        
             
 
             if (len(not_seen_ids) > 0):

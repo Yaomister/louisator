@@ -4,10 +4,7 @@ from fastapi import FastAPI, WebSocket
 import asyncio
 import cv2
 
-
-
 event_clients = set() 
-
 
 async def send_event(message: str):
     for websocket in list(event_clients):
@@ -31,7 +28,7 @@ async def camera(websocket: WebSocket):
         while True:
             frame = cv2.imencode(".png", runner.frame)[1]
             await websocket.send_bytes(frame.tobytes())
-            await asyncio.sleep(0.015)
+            await asyncio.sleep(0.25)
     except: 
         pass
 
