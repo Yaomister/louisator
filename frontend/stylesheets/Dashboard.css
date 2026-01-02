@@ -2,6 +2,7 @@
   --primary-background-color: #11151c;
   --secondary-background-color: #212d40;
   --font-color: #c5d4e8;
+  --font: "Courier New", Courier, monospace;
 }
 
 body {
@@ -58,7 +59,7 @@ body {
 }
 
 .events-title {
-  font-family: "Courier New", Courier, monospace;
+  font-family: var(--font);
   text-align: center;
   font-size: 2em;
   color: var(--font-color);
@@ -79,7 +80,24 @@ body {
   width: 90%;
   font-size: 1em;
   color: var(--font-color);
-  font-family: "Courier New", Courier, monospace;
+  font-family: var(--font);
   padding-left: 1em;
   line-break: normal;
+}
+
+.add-known-faces-button {
+  position: fixed;
+  color: var(--font-color);
+  left: 0;
+  background-color: transparent;
+  border-style: none;
+  margin: 10px;
+  font-family: var(--font);
+  transition: 0.3s ease-in-out;
+  font-size: 1em;
+}
+
+.add-known-faces-button:hover {
+  transform: translateY(5px);
+  color: white;
 }

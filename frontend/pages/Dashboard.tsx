@@ -8,6 +8,8 @@ import {
   YAxis,
 } from "recharts";
 
+import { AddKnownFacesForm } from "../components/AddKnownFacesForm";
+
 import "../stylesheets/Dashboard.css";
 
 type State = {
@@ -25,6 +27,8 @@ const Dashboard = () => {
   const [img, setImg] = useState<string | null>(null);
   const [data, setData] = useState<State[]>([]);
   const [events, setEvents] = useState<Message[]>([]);
+
+  const [showAddKnownFacesForm, setShowAddKnownFacesForm] = useState(false);
 
   useEffect(() => {
     const websockets = [
@@ -82,12 +86,24 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
+      {showAddKnownFacesForm && (
+        <AddKnownFacesForm
+          close={() => {
+            setShowAddKnownFacesForm(false);
+          }}
+        />
+      )}
       <div className="activity">
         <div className="live-view-wrapper">
-          <img
-            className="live-view"
-            src={img ? img : "/images/black.png"}
-          ></img>
+          <img className="live-view" src={img ? img : "/images/black.png"} />
+          <button
+            className="add-known-faces-button"
+            onClick={() => {
+              setShowAddKnownFacesForm(true);
+            }}
+          >
+            Add Known Faces
+          </button>
         </div>
         <div className="events-wrapper">
           <h2 className="events-title">Events</h2>

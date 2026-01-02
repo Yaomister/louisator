@@ -1,0 +1,72 @@
+.add-known-faces-form {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 600px;
+  transform: translate(-50%, -50%);
+  background-color: var(--secondary-background-color);
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  border-radius: 5px;
+}
+
+.top-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.close {
+  background-color: transparent;
+  border-style: none;
+  color: var(--font-color);
+  font-family: var(--font);
+  font-size: 2em;
+  transition: 0.3s ease-in-out;
+}
+
+.close:hover {
+  color: white;
+}
+
+.form-title {
+  color: var(--font-color);
+  font-family: var(--font);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  width: 50%;
+}
+
+.field label {
+  color: var(--font-color);
+  font-family: var(--font);
+}
+
+.submit-button {
+  width: 30%;
+  color: var(--font-color);
+  font-family: var(--font);
+  background-color: var(--primary-background-color);
+  border-radius: 3px;
+  border-style: none;
+  padding: 0.5em;
+  transition: 0.3s ease-in-out;
+}
+
+.submit-button:hover {
+  transform: translateY(-5px);
+  color: white;
+}
