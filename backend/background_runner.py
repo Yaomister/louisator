@@ -80,13 +80,14 @@ class BackgroundRunner:
             newly_seen = current_seen - self.state.seen
 
         
+
             
 
             if (len(newly_seen) > 0):
                 for key in newly_seen:
                     if isinstance(key, int):
                         for box in results[0].boxes:
-                            if (box.id == id):
+                            if (int(box.id.item()) == key):
                                 cls_id = int(box.cls)
                                 label = results[0].names.get(cls_id, "unknown animal")
                                 await self.send_event(f"met a {label.split("-")[1]} 🐾")
