@@ -3,14 +3,16 @@ import face_recognition
 import numpy as np
 import pathlib
 import cv2
+from io import BytesIO
 
 class FaceDetection:
     def __init__(self, known_faces):
         self.known_faces = []
         self.known_names = []
-        if (known_faces is not None):
+        if (known_faces is not None and len(known_faces) > 0):
             for name, face in known_faces:
-                self.known_faces.append(face_recognition.face_encodings(face)[0])
+                face_image = face_recognition.load_image_file(BytesIO(face))
+                self.known_faces.append(face_recognition.face_encodings(face_image)[0])
                 self.known_names.append(name)
 
         else:

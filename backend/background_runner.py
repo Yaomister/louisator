@@ -18,14 +18,14 @@ class State:
 
 class BackgroundRunner:
 
-    def __init__(self, send_event):
+    def __init__(self, send_event, known_faces):
         self.model = YOLO("best.pt")
         self.video = cv2.VideoCapture(0)
         self.state = State()
         _, self.frame = self.video.read()
         self.state.seen = set()
         self.send_event = send_event
-        self.facial_recognition = FaceDetection(None)
+        self.facial_recognition = FaceDetection(known_faces)
 
 
     async def activate(self):

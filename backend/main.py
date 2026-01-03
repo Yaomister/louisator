@@ -40,11 +40,67 @@ async def send_event(message: str):
             event_clients.discard(websocket)
 
 
-runner = BackgroundRunner(send_event)
+
 app = FastAPI()
+
+
+@app.post("/known-faces")
+async def add_known_faces(file: UploadFile = File(...), name: str = Form(...), db :AsyncSession =  Depends(get_db)):
+
+    res = await db.execute(select(KnownFace).where(KnownFace.name == name))
+    registered_known_face = res.scalar_one_or_none()
+    if registered_known_face is not None:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Face already registered")
+    id = uuid.uuid4()
+    image = file.file
+    face = KnownFace(id = id, name = name)
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None,
+        lambda: s3.upload_fileobj(
+            image,
+            "louisator-known-faces",
+             str(id),
+             ExtraArgs={"ContentType": file.content_type},
+      ))
+
+    await face.save(db)
+
+    return Response(status_code=204)
+
+
+async def get_known_faces(db: AsyncSession):
+    known_names = await db.execute(select(KnownFace))
+    results = []
+
+    for face in known_names.scalars().all():
+        id = str(face.id)
+        try:
+            url = await asyncio.get_running_loop().run_in_executor(
+                None, lambda: s3.get_object(Bucket="louisator-known-faces", Key = id)["Body"].read()
+            )
+        except ClientError:
+            url = None
+
+        results.append(( face.name,  url))
+
+    return results
+
+runner : BackgroundRunner = None
+
 
 @app.on_event("startup")
 async def app_start():
+    global runner
+    db_generator = get_db()
+    db = await anext(db_generator)
+
+    try:
+        known_faces = await get_known_faces(db)
+    finally:
+        await db_generator.aclose()
+
+    runner = BackgroundRunner(send_event, known_faces)
     asyncio.create_task(runner.activate())
 
 @app.websocket("/camera")
@@ -97,52 +153,6 @@ async def event(websocket: WebSocket):
     finally:
         event_clients.discard(websocket)
 
-@app.post("/known-faces")
-async def add_known_faces(file: UploadFile = File(...), name: str = Form(...), db :AsyncSession =  Depends(get_db)):
 
-    res = await db.execute(select(KnownFace).where(KnownFace.name == name))
-    registered_known_face = res.scalar_one_or_none()
-    if registered_known_face is not None:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Face already registered")
-    id = uuid.uuid4()
-    image = file.file
-    face = KnownFace(id = id, name = name)
-
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None,
-        lambda: s3.upload_fileobj(
-            image,
-            "louisator-known-faces",
-             str(id),
-             ExtraArgs={"ContentType": file.content_type},
-      ))
-
-
-
-    await face.save(db)
-
-    return Response(status_code=204)
-
-
-@app.get("/known-faces")
-async def get_known_faces(db: AsyncSession = Depends(get_db)):
-    known_names = await db.execute(select(KnownFace))
-    results = []
-
-    for face in known_names.scalars().all():
-        id = str(face.id)
-        try:
-            url = await asyncio.get_running_loop().run_in_executor(
-                None, lambda: s3.generate_presigned_url("get_object", Params = {
-                    "Bucket": "louisator-known-faces",
-                        "Key": id,
-                },  ExpiresIn=3600)
-            )
-        except ClientError:
-            url = None
-
-        results.append({"name" : face.name, "image_url" : url})
-
-    return results
 
 
