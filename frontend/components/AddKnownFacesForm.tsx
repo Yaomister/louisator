@@ -1,13 +1,34 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 
 import "../stylesheets/AddKnownFacesForm.css";
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 export const AddKnownFacesForm = ({ close }: { close: () => void }) => {
   const [image, setImage] = useState<File | null>(null);
+  const [name, setName] = useState<string>("");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    console.error(image);
     e.preventDefault();
+    if (!image) return;
+    const data = new FormData();
+    data.append("file", image);
+    data.append("name", name);
+    try {
+      const { status } = await axios.post(
+        "http://localhost:8000/known-faces",
+        data
+      );
+
+      console.error(status);
+      if (status == 200) {
+        toast.success("Image uploaded successfully!");
+        close();
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not upload image!");
+    }
   };
 
   return (
@@ -33,7 +54,13 @@ export const AddKnownFacesForm = ({ close }: { close: () => void }) => {
         </div>
         <div className="field">
           <label htmlFor="name">Name</label>
-          <input type="text" id={"name"}></input>
+          <input
+            type="text"
+            id={"name"}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setName(e.target.value);
+            }}
+          ></input>
         </div>
         <button type="submit" className="submit-button">
           Submit

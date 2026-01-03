@@ -8,6 +8,8 @@ import {
   YAxis,
 } from "recharts";
 
+import { Toaster } from "react-hot-toast";
+
 import { AddKnownFacesForm } from "../components/AddKnownFacesForm";
 
 import "../stylesheets/Dashboard.css";
@@ -86,6 +88,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
+      <Toaster position="top-right" />
       {showAddKnownFacesForm && (
         <AddKnownFacesForm
           close={() => {
