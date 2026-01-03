@@ -1,8 +1,32 @@
 
 from background_runner import BackgroundRunner
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Depends, File, HTTPException, status, UploadFile, Form, Response, WebSocketDisconnect
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import asyncio
 import cv2
+from db import get_db
+import os
+from dotenv import load_dotenv
+import boto3
+from db.models import KnownFace
+import uuid
+from botocore.exceptions import ClientError
+
+
+
+load_dotenv()
+
+access_key = os.getenv("ACCESS_KEY")
+secret_access_key = os.getenv("SECRET_ACCESS_KEY")
+
+
+s3 = boto3.client(
+    "s3",
+    region_name="us-east-1", 
+    aws_access_key_id = access_key,
+    aws_secret_access_key= secret_access_key
+)
 
 event_clients = set() 
 
@@ -10,8 +34,10 @@ async def send_event(message: str):
     for websocket in list(event_clients):
         try:
             await websocket.send_json({"message": message, "time" : runner.state.last_time,})
-        except:
-            event_clients.remove(websocket)
+        except WebSocketDisconnect:
+            event_clients.discard(websocket)
+        except Exception:
+            event_clients.discard(websocket)
 
 
 runner = BackgroundRunner(send_event)
@@ -26,16 +52,26 @@ async def camera(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
-            frame = cv2.imencode(".png", runner.frame)[1]
-            await websocket.send_bytes(frame.tobytes())
+            success, frame = cv2.imencode(".jpg", runner.frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            if not success:
+                continue
+            try:
+
+                await asyncio.wait_for(
+                    websocket.send_bytes(frame.tobytes()),
+                    timeout=1.0
+                )
+            except asyncio.TimeoutError:
+                break
+
             await asyncio.sleep(0.25)
-    except: 
+    except WebSocketDisconnect:
         pass
 
 
 @app.websocket("/data")
 async def data(websocket: WebSocket):
-    await websocket.accept(),
+    await websocket.accept()
     try:
         while True:
             await websocket.send_json( {
@@ -45,7 +81,7 @@ async def data(websocket: WebSocket):
         "num_obj_detect" : runner.state.num_obj_detected
     })
             await asyncio.sleep(5)
-    except:
+    except WebSocketDisconnect:
         pass
 
 
@@ -56,7 +92,57 @@ async def event(websocket: WebSocket):
     try:
         while True:
             await asyncio.sleep(1)
-    except: 
+    except WebSocketDisconnect: 
         pass
     finally:
-        event_clients.remove(websocket)
+        event_clients.discard(websocket)
+
+@app.post("/known-faces")
+async def add_known_faces(file: UploadFile = File(...), name: str = Form(...), db :AsyncSession =  Depends(get_db)):
+
+    res = await db.execute(select(KnownFace).where(KnownFace.name == name))
+    registered_known_face = res.scalar_one_or_none()
+    if registered_known_face is not None:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Face already registered")
+    id = uuid.uuid4()
+    image = file.file
+    face = KnownFace(id = id, name = name)
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None,
+        lambda: s3.upload_fileobj(
+            image,
+            "louisator-known-faces",
+             str(id),
+             ExtraArgs={"ContentType": file.content_type},
+      ))
+
+
+
+    await face.save(db)
+
+    return Response(status_code=204)
+
+
+@app.get("/known-faces")
+async def get_known_faces(db: AsyncSession = Depends(get_db)):
+    known_names = await db.execute(select(KnownFace))
+    results = []
+
+    for face in known_names.scalars().all():
+        id = str(face.id)
+        try:
+            url = await asyncio.get_running_loop().run_in_executor(
+                None, lambda: s3.generate_presigned_url("get_object", Params = {
+                    "Bucket": "louisator-known-faces",
+                        "Key": id,
+                },  ExpiresIn=3600)
+            )
+        except ClientError:
+            url = None
+
+        results.append({"name" : face.name, "image_url" : url})
+
+    return results
+
+
