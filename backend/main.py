@@ -12,6 +12,7 @@ import boto3
 from db.models import KnownFace
 import uuid
 from botocore.exceptions import ClientError
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
@@ -43,6 +44,14 @@ async def send_event(message: str):
 
 app = FastAPI()
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/known-faces")
 async def add_known_faces(file: UploadFile = File(...), name: str = Form(...), db :AsyncSession =  Depends(get_db)):
